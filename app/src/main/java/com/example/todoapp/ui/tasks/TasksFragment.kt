@@ -11,16 +11,18 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.todoapp.R
+import com.example.todoapp.data.Task
 import com.example.todoapp.data.preferences.SortOrder
 import com.example.todoapp.databinding.FragmentTasksBinding
 import com.example.todoapp.utils.onQueryTextListener
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class TasksFragment : Fragment(R.layout.fragment_tasks) {
+class TasksFragment : Fragment(R.layout.fragment_tasks), TasksAdapter.OnItemClickListener {
 
     private val viewModel : TaskViewModel by viewModels()
     private lateinit var tasksAdapter: TasksAdapter
@@ -29,7 +31,7 @@ class TasksFragment : Fragment(R.layout.fragment_tasks) {
         super.onViewCreated(view, savedInstanceState)
 
         val binding = FragmentTasksBinding.bind(view)
-        tasksAdapter = TasksAdapter()
+        tasksAdapter = TasksAdapter(this)
 
         setupRecyclerView(binding)
         subscribeObservers()
@@ -53,6 +55,15 @@ class TasksFragment : Fragment(R.layout.fragment_tasks) {
         viewModel.tasks.observe(viewLifecycleOwner, {
             tasksAdapter.submitList(it)
         })
+    }
+
+    override fun onItemClick(task: Task) {
+        Snackbar.make(requireView(), "aaaa", Snackbar.LENGTH_LONG).show()
+        viewModel.onTaskSelected(task)
+    }
+
+    override fun onCheckBoxClick(task: Task, isChecked: Boolean) {
+        viewModel.onTaskCheckedChanged(task, isChecked)
     }
 
     ///--------------- Made by the SO ----------------------

@@ -12,7 +12,9 @@ import com.example.todoapp.databinding.ItemTaskBinding
 
 
 //https://medium.com/simform-engineering/listadapter-a-recyclerview-adapter-extension-5359d13bd879
-class TasksAdapter : ListAdapter<Task, TasksAdapter.TaskViewHolder>(DiffCallback()) {
+class TasksAdapter(
+    private val listener : OnItemClickListener? = null
+) : ListAdapter<Task, TasksAdapter.TaskViewHolder>(DiffCallback()) {
 
 
 
@@ -30,8 +32,35 @@ class TasksAdapter : ListAdapter<Task, TasksAdapter.TaskViewHolder>(DiffCallback
         holder.bind(item)
     }
 
+    interface OnItemClickListener{
+        fun onItemClick(task: Task)
+        fun onCheckBoxClick(task: Task, isChecked : Boolean)
+    }
+
 
     inner class TaskViewHolder(private val binding : ItemTaskBinding) : RecyclerView.ViewHolder(binding.root){
+
+        init {
+            listener?.let {
+                binding.apply {
+                    root.setOnClickListener {
+                        val position = adapterPosition
+                        if (position != RecyclerView.NO_POSITION){
+                            val task = getItem(position)
+                            listener.onItemClick(task)
+                        }
+                    }
+
+                    checkBoxCompleted.setOnClickListener {
+                        val position = adapterPosition
+                        if (position != RecyclerView.NO_POSITION) {
+                            val task = getItem(position)
+                            listener.onCheckBoxClick(task, checkBoxCompleted.isChecked)
+                        }
+                    }
+                }
+            }
+        }
 
         fun bind(task : Task){
             binding.apply {

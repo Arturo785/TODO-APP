@@ -4,6 +4,7 @@ import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import com.example.todoapp.data.Task
 import com.example.todoapp.data.db.TaskDao
 import com.example.todoapp.data.preferences.PreferencesManager
 import com.example.todoapp.data.preferences.SortOrder
@@ -44,6 +45,14 @@ class TaskViewModel @ViewModelInject constructor(
 
     fun onHideCompletedClick(hideCompleted: Boolean) = viewModelScope.launch {
         preferencesManager.updateHideCompleted(hideCompleted)
+    }
+
+    fun onTaskSelected(task: Task) {
+
+    }
+
+    fun onTaskCheckedChanged(task: Task, checked: Boolean) = viewModelScope.launch {
+        taskDao.update(task.copy(completed = checked)) // only changes the boolean one
     }
 
 }
