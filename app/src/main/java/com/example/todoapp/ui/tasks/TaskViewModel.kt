@@ -8,9 +8,11 @@ import com.example.todoapp.data.Task
 import com.example.todoapp.data.db.TaskDao
 import com.example.todoapp.data.preferences.PreferencesManager
 import com.example.todoapp.data.preferences.SortOrder
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 
@@ -18,6 +20,10 @@ class TaskViewModel @ViewModelInject constructor(
     private val taskDao: TaskDao,
     private val preferencesManager: PreferencesManager // dagger knows how to inject it because it has @Inject in constructor
 ): ViewModel(){
+
+    // the one that sends the events
+    private val tasksEventChannel = Channel<TaskEvent>()
+    val taskEvent = tasksEventChannel.receiveAsFlow() // the one consumed
 
     // gets changed on the searchView in fragment
     val searchQuery = MutableStateFlow("")
@@ -53,6 +59,20 @@ class TaskViewModel @ViewModelInject constructor(
 
     fun onTaskCheckedChanged(task: Task, checked: Boolean) = viewModelScope.launch {
         taskDao.update(task.copy(completed = checked)) // only changes the boolean one
+    }
+
+    fun onTaskSwiped(task: Task) = viewModelScope.launch {
+        taskDao.delete(task)
+        // sets the new event to the channel to be consumed
+        tasksEventChannel.send(TaskEvent.ShowUndoDeleteTaskMessage(task))
+    }
+
+    fun undoDeleteClick(task: Task) =  viewModelScope.launch {
+        taskDao.insert(task)
+    }
+
+    sealed class TaskEvent {
+        data class ShowUndoDeleteTaskMessage(val task: Task) : TaskEvent()
     }
 
 }

@@ -9,7 +9,9 @@ import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.todoapp.R
 import com.example.todoapp.data.Task
 import com.example.todoapp.data.preferences.SortOrder
@@ -37,10 +39,25 @@ class TasksFragment : Fragment(R.layout.fragment_tasks), TasksAdapter.OnItemClic
         subscribeObservers()
 
         setHasOptionsMenu(true)
+
+        // shots down when onStop called and restarted when onStart is called
+        viewLifecycleOwner.lifecycleScope.launchWhenStarted {
+            // Receives a stream of values
+            viewModel.taskEvent.collect { event ->
+                when(event){
+                    is TaskViewModel.TaskEvent.ShowUndoDeleteTaskMessage -> {
+                        Snackbar.make(requireView(), "Task deleted", Snackbar.LENGTH_LONG)
+                            .setAction("UNDO"){
+                                viewModel.undoDeleteClick(event.task)
+                            }.show()
+                    }
+                }
+            }
+        }
     }
 
-
     ///------------- Made by me ---------------------------
+
     private fun setupRecyclerView(binding: FragmentTasksBinding){
         binding.apply {
             recyclerViewTasks.apply {
@@ -48,6 +65,25 @@ class TasksFragment : Fragment(R.layout.fragment_tasks), TasksAdapter.OnItemClic
                 layoutManager = LinearLayoutManager(requireContext())
                 setHasFixedSize(true)
             }
+
+            ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0,
+            ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT){
+
+                override fun onMove(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                    target: RecyclerView.ViewHolder
+                ): Boolean {
+                   // do nothing
+                    return false
+                }
+
+                override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                    val task = tasksAdapter.currentList[viewHolder.adapterPosition]
+                    viewModel.onTaskSwiped(task)
+                }
+
+            }).attachToRecyclerView(recyclerViewTasks)
         }
     }
 
@@ -79,6 +115,7 @@ class TasksFragment : Fragment(R.layout.fragment_tasks), TasksAdapter.OnItemClic
             viewModel.searchQuery.value = it
         }
 
+        // sets the menu values as they were before leaving
         // lives as long as the view of the fragment
         viewLifecycleOwner.lifecycleScope.launch {
 

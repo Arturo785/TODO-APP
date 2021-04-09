@@ -38,6 +38,7 @@ class PreferencesManager @Inject constructor(
             )
             val hideCompleted = preferences[PreferencesKey.HIDE_COMPLETED] ?: false
 
+            // this is returned
             FilterPreferences(sortOrder, hideCompleted)
         }
 
